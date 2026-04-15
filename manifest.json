@@ -1,0 +1,19 @@
+{
+  "name": "Mind Mate - Thought Awareness & Transformation App",
+  "short_name": "Mind Mate",
+  "description": "Log thoughts, classify patterns, and track a simple reflection journey.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7fbf5",
+  "theme_color": "#2f8f5b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
