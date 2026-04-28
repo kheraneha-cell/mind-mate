@@ -79,7 +79,6 @@ const els = {
   communityImage: document.getElementById("communityImage"),
   communityFeed: document.getElementById("communityFeed"),
   counsellorList: document.getElementById("counsellorList"),
-  summaryContent: document.getElementById("summaryContent"),
   positiveTargetInput: document.getElementById("positiveTargetInput"),
   otherTargetInput: document.getElementById("otherTargetInput"),
   durationInput: document.getElementById("durationInput"),
@@ -316,7 +315,6 @@ function renderAll() {
   renderThoughts();
   renderDashboard();
   renderCommunity();
-  renderSummary();
 }
 
 function renderGoalForm() {
@@ -461,46 +459,6 @@ function renderCounsellors() {
   });
 }
 
-function renderSummary() {
-  const duration = state.goal?.duration ?? 15;
-  const day = currentJourneyDay();
-  if (!state.goal || day < duration || !state.thoughts.length) {
-    els.summaryContent.innerHTML = "<p class='empty-state'>Complete your journey to unlock a 5-line summary.</p>";
-    return;
-  }
-
-  const counts = countByCategory(state.thoughts);
-  const total = state.thoughts.length;
-  const positivePct = percentage(state.thoughts, "Positive");
-  const negativePct = percentage(state.thoughts, "Negative");
-  const wastePct = percentage(state.thoughts, "Waste");
-  const unnecessaryPct = percentage(state.thoughts, "Unnecessary");
-  const repetitiveCount = state.thoughts.filter((item) => item.repeated).length;
-
-  els.summaryContent.innerHTML = `
-    <div class="summary-hero">
-      <p class="screen-label">15-day story</p>
-      <h3>${escapeHtml(state.profile?.name || "You")} built more awareness across ${state.goal.duration} days.</h3>
-      <div class="bucket-bar" aria-label="Thought bucket overview">
-        <div class="bucket-segment Positive" style="width:${positivePct}%"></div>
-        <div class="bucket-segment Negative" style="width:${negativePct}%"></div>
-        <div class="bucket-segment Waste" style="width:${wastePct}%"></div>
-        <div class="bucket-segment Unnecessary" style="width:${unnecessaryPct}%"></div>
-      </div>
-      <div class="summary-grid">
-        <div class="summary-chip"><span>Positive</span><strong>${counts.Positive} - ${positivePct}%</strong></div>
-        <div class="summary-chip"><span>Negative</span><strong>${counts.Negative} - ${negativePct}%</strong></div>
-        <div class="summary-chip"><span>Waste</span><strong>${counts.Waste} - ${wastePct}%</strong></div>
-        <div class="summary-chip"><span>Unnecessary</span><strong>${counts.Unnecessary} - ${unnecessaryPct}%</strong></div>
-      </div>
-      <div class="summary-chip"><span>Repetitive patterns flagged</span><strong>${repetitiveCount}</strong></div>
-      <canvas id="summaryChart" width="220" height="220" aria-label="Summary thought distribution chart"></canvas>
-    </div>
-    ${buildJourneySummary().map((line) => `<div class="story-line">${line}</div>`).join("")}
-  `;
-  drawSummaryChart(counts, total);
-}
-
 function buildJourneySummary() {
   const sorted = [...state.thoughts].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   const midpoint = Math.max(1, Math.floor(sorted.length / 2));
@@ -626,7 +584,7 @@ function renderJourneyCalendar() {
 
   els.dashboardDayGrid.innerHTML = groupedDays.map((day, index) => `
     <button class="calendar-day ${day.tone} ${day.key === selectedJourneyDay ? "active" : ""}" type="button" data-day-key="${day.key}">
-      Day ${index + 1}
+      <span>${index + 1}</span>
       <small>${day.total} thought${day.total === 1 ? "" : "s"}</small>
     </button>
   `).join("");
