@@ -6,11 +6,11 @@ Mind Mate is a mobile-first thought awareness and transformation app designed to
 
 - Email login with a simple name-based profile
 - Goal setup for 15-day or 21-day journeys
-- Thought logging with free text or handwritten image upload
+- Journal logging with free text, handwritten image upload, and voice notes
 - Rule-based thought classification with manual override
-- Dashboard with counts, pie chart, progress bar, and insight line
+- Dashboard with counts, pie chart, progress bar, insight line, and a day-by-day journey calendar
+- Quick guided meditation and affirmation audio support directly from the dashboard
 - Community feed with reactions
-- Summary story view after the journey period
 
 ## Run Locally
 
