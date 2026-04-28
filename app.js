@@ -75,6 +75,7 @@ const els = {
   quickLogBtn: document.getElementById("quickLogBtn"),
   goalEditBtn: document.getElementById("goalEditBtn"),
   sampleDataBtn: document.getElementById("sampleDataBtn"),
+  clearSampleBtn: document.getElementById("clearSampleBtn"),
   notificationToggle: document.getElementById("notificationToggle"),
   notificationStatus: document.getElementById("notificationStatus"),
   thoughtText: document.getElementById("thoughtText"),
@@ -141,6 +142,7 @@ function attachEvents() {
   els.quickLogBtn.addEventListener("click", () => showScreen("logScreen"));
   els.goalEditBtn.addEventListener("click", () => showScreen("goalScreen"));
   els.sampleDataBtn.addEventListener("click", loadSampleJourney);
+  els.clearSampleBtn.addEventListener("click", clearSampleData);
   document.getElementById("installBtn").addEventListener("click", handleInstallClick);
   els.recordVoiceBtn.addEventListener("click", startVoiceRecording);
   els.stopVoiceBtn.addEventListener("click", stopVoiceRecording);
@@ -299,6 +301,28 @@ function handleLogout() {
   saveState();
   showScreen("loginScreen");
   renderAll();
+}
+
+function clearSampleData() {
+  state.thoughts = [];
+  state.community = [];
+  state.members = state.profile ? [{
+    id: crypto.randomUUID(),
+    name: state.profile.name,
+    email: state.profile.email,
+    connectedAt: new Date().toISOString()
+  }] : [];
+  state.metrics = { logDays: 0, dashboardViews: 0 };
+  state.notifications = {
+    enabled: Boolean(state.notifications?.enabled),
+    permission: state.notifications?.permission || "default"
+  };
+  selectedJourneyDay = "";
+  currentVoiceNote = "";
+  saveState();
+  renderAll();
+  showScreen("homeScreen");
+  setOcrStatus("Sample data cleared. You can begin journaling with a fresh journey.", "good");
 }
 
 function loadSampleJourney() {
@@ -933,11 +957,16 @@ function handleBeforeInstallPrompt(event) {
 }
 
 async function handleInstallClick() {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  updateInstallButton();
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    updateInstallButton();
+    return;
+  }
+
+  els.contactText.textContent = "To install this app, open it in Chrome or Edge and use the browser menu or install icon to add it to your device.";
+  els.contactDialog.showModal();
 }
 
 function handleInstalled() {
@@ -948,7 +977,8 @@ function handleInstalled() {
 function updateInstallButton() {
   const installBtn = document.getElementById("installBtn");
   const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-  installBtn.classList.toggle("hidden", !deferredInstallPrompt || standalone || !state.profile || !state.goal);
+  installBtn.classList.toggle("hidden", standalone || !state.profile || !state.goal);
+  installBtn.textContent = deferredInstallPrompt ? "Download app" : "How to install";
 }
 
 function unregisterServiceWorkers() {
