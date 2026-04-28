@@ -1,4 +1,626 @@
-const STORAGE_KEY = "mind-mate-v1";
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mind Mate - Thought Awareness & Transformation App</title>
+  <meta name="theme-color" content="#2f8f5b">
+  <meta name="description" content="Mind Mate helps you log thoughts, classify patterns, and track a simple 15-day reflection journey.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600&display=swap" rel="stylesheet">
+  <style>:root {
+  --bg: #f7fbf5;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-strong: #ffffff;
+  --text: #193126;
+  --muted: #64756a;
+  --line: rgba(25, 49, 38, 0.12);
+  --primary: #2f8f5b;
+  --primary-dark: #1f6c42;
+  --positive: #3fa96b;
+  --negative: #d66b6b;
+  --waste: #e0a84f;
+  --unnecessary: #7b8bbd;
+  --shadow: 0 18px 40px rgba(30, 64, 44, 0.08);
+  --radius: 22px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "DM Sans", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(111, 190, 140, 0.2), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(47, 143, 91, 0.14), transparent 28%),
+    var(--bg);
+}
+
+button, input, select, textarea { font: inherit; }
+img { display: block; max-width: 100%; }
+
+.app-shell {
+  width: min(100%, 480px);
+  margin: 0 auto;
+  padding: 18px 16px 96px;
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.eyebrow, .screen-label, .mini-label {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  line-height: 1.1;
+}
+
+h1 { margin-top: 4px; font-size: 1.7rem; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.1rem; }
+p { line-height: 1.5; }
+.supporting, .microcopy { color: var(--muted); }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  margin-bottom: 16px;
+}
+
+.hero-card, .welcome-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(230, 246, 234, 0.94));
+}
+
+.action-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stack { display: grid; gap: 14px; }
+label span { display: inline-block; margin-bottom: 8px; font-weight: 500; }
+
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 15px;
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+textarea { resize: vertical; }
+
+.primary-button, .ghost-button, .nav-item, .like-button {
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease, opacity 140ms ease;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 16px;
+  font-weight: 700;
+}
+
+.ghost-button {
+  background: rgba(47, 143, 91, 0.12);
+  color: var(--primary-dark);
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.primary-button:active, .ghost-button:active, .nav-item:active, .like-button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-strip strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.12rem;
+}
+
+.content-head, .goal-meta, .switch-row, .post-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(47, 143, 91, 0.12);
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.switch-row input { width: auto; transform: scale(1.1); }
+
+.status-banner {
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-size: 0.94rem;
+}
+
+.status-banner.neutral { background: rgba(47, 143, 91, 0.08); color: var(--primary-dark); }
+.status-banner.warn { background: rgba(224, 168, 79, 0.16); color: #7a4c00; }
+.status-banner.good { background: rgba(63, 169, 107, 0.14); color: #145c36; }
+
+.image-preview {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.list-block { display: grid; gap: 10px; }
+
+.thought-row, .post-card, .counsellor-card {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.thought-meta, .post-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badge.Positive { background: rgba(63, 169, 107, 0.15); color: #17623a; }
+.badge.Negative { background: rgba(214, 107, 107, 0.14); color: #883535; }
+.badge.Waste { background: rgba(224, 168, 79, 0.16); color: #8a5c0a; }
+.badge.Unnecessary { background: rgba(123, 139, 189, 0.14); color: #3f4f85; }
+.badge.repeat { background: rgba(25, 49, 38, 0.08); color: var(--text); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.metric-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.4rem;
+}
+
+.chart-panel {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.legend { width: 100%; display: grid; gap: 8px; }
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.92rem;
+}
+
+.legend-key { display: inline-flex; align-items: center; gap: 8px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+.progress-bar {
+  width: 100%;
+  height: 13px;
+  border-radius: 999px;
+  background: rgba(25, 49, 38, 0.08);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #58ba82, #2f8f5b);
+}
+
+.insight-line { margin: 16px 0 0; font-weight: 700; }
+
+.like-button {
+  padding: 10px 12px;
+  background: rgba(47, 143, 91, 0.12);
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.reaction-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.like-button.love {
+  background: rgba(214, 107, 107, 0.14);
+  color: #883535;
+}
+
+.counsellor-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-card {
+  border: none;
+  border-radius: 22px;
+  padding: 20px;
+  width: min(92vw, 340px);
+  box-shadow: var(--shadow);
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  width: min(calc(100% - 16px), 460px);
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(25, 49, 38, 0.08);
+  box-shadow: 0 12px 34px rgba(22, 45, 33, 0.16);
+  backdrop-filter: blur(14px);
+}
+
+.nav-item {
+  padding: 10px 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.nav-item.active {
+  background: rgba(47, 143, 91, 0.12);
+  color: var(--primary-dark);
+}
+
+.empty-state {
+  color: var(--muted);
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.member-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(47, 143, 91, 0.1);
+  color: var(--primary-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.summary-hero {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(47, 143, 91, 0.12), rgba(255, 255, 255, 0.92));
+  border: 1px solid var(--line);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.summary-chip {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.summary-chip strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.2rem;
+}
+
+.story-line {
+  padding: 14px 16px;
+  border-left: 4px solid var(--primary);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.bucket-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(25, 49, 38, 0.08);
+}
+
+.bucket-segment.Positive { background: var(--positive); }
+.bucket-segment.Negative { background: var(--negative); }
+.bucket-segment.Waste { background: var(--waste); }
+.bucket-segment.Unnecessary { background: var(--unnecessary); }
+
+.hidden { display: none !important; }
+
+@media (min-width: 768px) {
+  .app-shell {
+    width: min(100%, 1120px);
+    padding-bottom: 32px;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .screen.active { display: contents; }
+
+  .bottom-nav {
+    position: sticky;
+    transform: none;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .action-cluster {
+    flex-direction: row;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Mind Mate</p>
+        <h1>Thought Awareness & Transformation</h1>
+      </div>
+      <button id="logoutBtn" class="ghost-button hidden" type="button">Logout</button>
+    </header>
+
+    <main>
+      <section id="loginScreen" class="screen active">
+        <div class="card hero-card">
+          <p class="screen-label">Login</p>
+          <h2>Begin your 10-minute daily reset</h2>
+          <p class="supporting">A lightweight reflection space for awareness, classification, and steady progress.</p>
+          <form id="loginForm" class="stack">
+            <label><span>Email</span><input id="emailInput" type="email" placeholder="name@example.com" required></label>
+            <label><span>Name</span><input id="nameInput" type="text" placeholder="Your name"></label>
+            <button class="primary-button" type="submit">Continue</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="goalScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Goal Setup</p>
+          <h2>Choose your focus journey</h2>
+          <form id="goalForm" class="stack">
+            <label><span>Positive thoughts target (%)</span><input id="positiveTargetInput" type="number" min="1" max="100" value="60" required></label>
+            <label><span>Other thoughts cap (%)</span><input id="otherTargetInput" type="number" min="0" max="100" value="40" required></label>
+            <label><span>Duration</span><select id="durationInput"><option value="15">15 days</option><option value="21">21 days</option></select></label>
+            <button class="primary-button" type="submit">Save goals</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="homeScreen" class="screen">
+        <div class="card welcome-card">
+          <div>
+            <p class="screen-label">Home</p>
+            <h2 id="welcomeTitle">Welcome back</h2>
+            <p id="journeyMeta" class="supporting"></p>
+          </div>
+          <div class="action-cluster">
+            <button id="installBtn" class="ghost-button hidden" type="button">Install app</button>
+            <button id="goalEditBtn" class="ghost-button" type="button">Edit goals</button>
+            <button id="sampleDataBtn" class="ghost-button" type="button">Load sample data</button>
+            <button id="quickLogBtn" class="primary-button" type="button">Log today's thought</button>
+          </div>
+        </div>
+
+        <div class="card stat-strip">
+          <div><span class="mini-label">Daily logging rate</span><strong id="dailyRateMetric">0%</strong></div>
+          <div><span class="mini-label">Dashboard usage</span><strong id="dashboardMetric">0%</strong></div>
+          <div><span class="mini-label">Completion</span><strong id="completionMetric">Day 0</strong></div>
+        </div>
+
+        <div class="card content-card">
+          <div class="content-head">
+            <div><p class="screen-label">Daily content</p><h3>Small action, steady clarity</h3></div>
+            <span id="contentDay" class="pill"></span>
+          </div>
+          <p id="dailyContentText"></p>
+        </div>
+
+        <div class="card notification-card">
+          <div>
+            <p class="screen-label">Notifications</p>
+            <h3>Gentle reminders</h3>
+            <p class="supporting">Morning affirmation and evening log reminder.</p>
+          </div>
+          <label class="switch-row"><span>Enable notifications</span><input id="notificationToggle" type="checkbox"></label>
+          <p id="notificationStatus" class="microcopy"></p>
+        </div>
+      </section>
+
+      <section id="logScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Log Input</p>
+          <h2>Capture the thought</h2>
+          <form id="thoughtForm" class="stack">
+            <label><span>Thought text</span><textarea id="thoughtText" rows="5" placeholder="Write what's on your mind..."></textarea></label>
+            <label><span>Upload handwritten note</span><input id="imageInput" type="file" accept="image/*"></label>
+            <div id="imagePreviewWrap" class="image-preview hidden"><img id="imagePreview" alt="Uploaded note preview"></div>
+            <div id="ocrStatus" class="status-banner neutral">OCR ready when an image is uploaded.</div>
+            <label>
+              <span>Category</span>
+              <select id="categoryOverride">
+                <option value="">Auto classify</option>
+                <option value="Positive">Positive</option>
+                <option value="Negative">Negative</option>
+                <option value="Waste">Waste</option>
+                <option value="Unnecessary">Unnecessary</option>
+              </select>
+            </label>
+            <button class="primary-button" type="submit">Save thought</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Recent entries</h3>
+          <div id="recentThoughts" class="list-block empty-state">Start logging your thoughts</div>
+        </div>
+      </section>
+
+      <section id="dashboardScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Dashboard</p>
+          <h2>Awareness snapshot</h2>
+          <div id="dashboardEmpty" class="empty-state">Start logging your thoughts</div>
+          <div id="dashboardContent" class="hidden">
+            <div class="stats-grid">
+              <article class="metric-card"><span>Positive</span><strong id="positiveCount">0</strong></article>
+              <article class="metric-card"><span>Negative</span><strong id="negativeCount">0</strong></article>
+              <article class="metric-card"><span>Waste</span><strong id="wasteCount">0</strong></article>
+              <article class="metric-card"><span>Unnecessary</span><strong id="unnecessaryCount">0</strong></article>
+            </div>
+
+            <div class="chart-panel">
+              <canvas id="pieChart" width="220" height="220" aria-label="Thought distribution pie chart"></canvas>
+              <div id="chartLegend" class="legend"></div>
+            </div>
+
+            <div class="goal-progress">
+              <div class="goal-meta"><span>Goal progress</span><strong id="goalProgressLabel">0% vs 60%</strong></div>
+              <div class="progress-bar"><div id="goalProgressBar" class="progress-fill"></div></div>
+            </div>
+
+            <p id="dashboardInsight" class="insight-line"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="communityScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Community Feed</p>
+          <h2>Motivation wall</h2>
+          <form id="communityForm" class="stack">
+            <label><span>Share a short post</span><textarea id="communityText" rows="3" maxlength="200" placeholder="Up to 200 characters"></textarea></label>
+            <label><span>Optional image</span><input id="communityImage" type="file" accept="image/*"></label>
+            <button class="primary-button" type="submit">Post</button>
+          </form>
+          <div id="communityFeed" class="list-block empty-state">No posts yet. Share a gentle win.</div>
+        </div>
+      </section>
+
+      <section id="counsellorScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Counsellor List</p>
+          <h2>Support options</h2>
+          <div id="counsellorList" class="stack"></div>
+        </div>
+      </section>
+
+      <section id="summaryScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Summary</p>
+          <h2>Your journey story</h2>
+          <div id="summaryContent" class="stack"><p class="empty-state">Complete your journey to unlock a 5-line summary.</p></div>
+        </div>
+      </section>
+    </main>
+
+    <nav id="bottomNav" class="bottom-nav hidden">
+      <button data-screen="homeScreen" class="nav-item active" type="button">Home</button>
+      <button data-screen="logScreen" class="nav-item" type="button">Log</button>
+      <button data-screen="dashboardScreen" class="nav-item" type="button">Dashboard</button>
+      <button data-screen="communityScreen" class="nav-item" type="button">Community</button>
+      <button data-screen="counsellorScreen" class="nav-item" type="button">Support</button>
+      <button data-screen="summaryScreen" class="nav-item" type="button">Summary</button>
+    </nav>
+  </div>
+
+  <dialog id="contactDialog" class="dialog-card">
+    <p id="contactText"></p>
+    <button id="closeDialogBtn" class="primary-button" type="button">Close</button>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>const STORAGE_KEY = "mind-mate-v1";
 const CATEGORY_COLORS = { Positive: "#3fa96b", Negative: "#d66b6b", Waste: "#e0a84f", Unnecessary: "#7b8bbd" };
 
 const contentCards = [
@@ -257,17 +879,6 @@ function loadSampleJourney() {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - (days - 1));
 
-  state.notifications = {
-    enabled: Boolean(state.notifications?.enabled),
-    permission: state.notifications?.permission || "default"
-  };
-  state.metrics = {
-    logDays: Number(state.metrics?.logDays || 0),
-    dashboardViews: Number(state.metrics?.dashboardViews || 0)
-  };
-  state.members = Array.isArray(state.members) ? state.members : [];
-  state.community = Array.isArray(state.community) ? state.community : [];
-  state.thoughts = Array.isArray(state.thoughts) ? state.thoughts : [];
   state.profile = state.profile || { email: "demo@mindmate.app", name: "Demo User" };
   state.goal = {
     positiveTarget: 60,
@@ -406,8 +1017,8 @@ function renderCommunity() {
       <p>${escapeHtml(post.text)}</p>
       ${post.image ? `<img src="${post.image}" alt="Community post image">` : ""}
       <div class="reaction-row">
-        <button class="like-button" type="button" data-like-id="${post.id}" aria-label="Like post">👍 ${post.likes || 0}</button>
-        <button class="like-button love" type="button" data-love-id="${post.id}" aria-label="Love post">❤ ${post.loves || 0}</button>
+        <button class="like-button" type="button" data-like-id="${post.id}" aria-label="Like post">ðŸ‘ ${post.likes || 0}</button>
+        <button class="like-button love" type="button" data-love-id="${post.id}" aria-label="Love post">â¤ ${post.loves || 0}</button>
       </div>
     </article>
   `).join("");
@@ -686,7 +1297,7 @@ function drawSummaryChart(counts, total) {
 
 function loadState() {
   const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-  const defaults = {
+  return parsed || {
     profile: null,
     goal: null,
     thoughts: [],
@@ -694,26 +1305,6 @@ function loadState() {
     members: [],
     notifications: { enabled: false, permission: "default" },
     metrics: { logDays: 0, dashboardViews: 0 }
-  };
-
-  if (!parsed) {
-    return defaults;
-  }
-
-  return {
-    ...defaults,
-    ...parsed,
-    thoughts: Array.isArray(parsed.thoughts) ? parsed.thoughts : [],
-    community: Array.isArray(parsed.community) ? parsed.community : [],
-    members: Array.isArray(parsed.members) ? parsed.members : [],
-    notifications: {
-      ...defaults.notifications,
-      ...(parsed.notifications || {})
-    },
-    metrics: {
-      ...defaults.metrics,
-      ...(parsed.metrics || {})
-    }
   };
 }
 
@@ -829,3 +1420,7 @@ function escapeHtml(text) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+</script>
+</body>
+</html>
+
