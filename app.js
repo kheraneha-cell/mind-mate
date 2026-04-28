@@ -30,8 +30,39 @@ const counsellors = [
   { name: "Sarah Lim", title: "Youth & Family Therapist", bio: "Helps with anxiety, communication patterns, and mindset tools.", contact: "sarah.lim@example.com" }
 ];
 
+const guidedAudioTracks = [
+  {
+    id: "grounding-reset",
+    title: "2-minute grounding reset",
+    duration: "2 min",
+    lines: [
+      "Sit comfortably and let your shoulders soften.",
+      "Breathe in for four, and out for six.",
+      "Notice one thought without judging it.",
+      "Say softly: I can slow down. I can choose calm.",
+      "Finish by setting one kind intention for the next hour."
+    ]
+  },
+  {
+    id: "morning-affirmation",
+    title: "Morning affirmation",
+    duration: "90 sec",
+    lines: [
+      "Today I meet myself with patience.",
+      "My thoughts can move, and I do not need to hold every one of them.",
+      "I choose clarity over urgency.",
+      "I choose steadiness over pressure.",
+      "One helpful thought is enough to begin."
+    ]
+  }
+];
+
 const state = loadState();
 let selectedJourneyDay = "";
+let mediaRecorder = null;
+let audioChunks = [];
+let currentVoiceNote = "";
+let currentUtterance = null;
 const els = {
   screens: [...document.querySelectorAll(".screen")],
   nav: document.getElementById("bottomNav"),
@@ -50,6 +81,11 @@ const els = {
   imageInput: document.getElementById("imageInput"),
   imagePreviewWrap: document.getElementById("imagePreviewWrap"),
   imagePreview: document.getElementById("imagePreview"),
+  recordVoiceBtn: document.getElementById("recordVoiceBtn"),
+  stopVoiceBtn: document.getElementById("stopVoiceBtn"),
+  voiceRecorderStatus: document.getElementById("voiceRecorderStatus"),
+  voicePreviewWrap: document.getElementById("voicePreviewWrap"),
+  voicePreview: document.getElementById("voicePreview"),
   ocrStatus: document.getElementById("ocrStatus"),
   categoryOverride: document.getElementById("categoryOverride"),
   recentThoughts: document.getElementById("recentThoughts"),
@@ -106,6 +142,8 @@ function attachEvents() {
   els.goalEditBtn.addEventListener("click", () => showScreen("goalScreen"));
   els.sampleDataBtn.addEventListener("click", loadSampleJourney);
   document.getElementById("installBtn").addEventListener("click", handleInstallClick);
+  els.recordVoiceBtn.addEventListener("click", startVoiceRecording);
+  els.stopVoiceBtn.addEventListener("click", stopVoiceRecording);
   els.imageInput.addEventListener("change", handleImageUpload);
   els.notificationToggle.addEventListener("change", handleNotificationToggle);
   els.logoutBtn.addEventListener("click", handleLogout);
@@ -169,7 +207,7 @@ function handleThoughtSave(event) {
   event.preventDefault();
   const text = els.thoughtText.value.trim();
   const image = els.imagePreview.src || "";
-  if (!text && !image) {
+  if (!text && !image && !currentVoiceNote) {
     setOcrStatus("Add text or an image to continue.", "warn");
     return;
   }
@@ -180,10 +218,11 @@ function handleThoughtSave(event) {
   state.thoughts.unshift({
     id: crypto.randomUUID(),
     text: text || "[Image note]",
-    image,
-    category,
-    autoCategory,
-    repeated,
+      image,
+      voiceNote: currentVoiceNote,
+      category,
+      autoCategory,
+      repeated,
     createdAt: new Date().toISOString()
   });
   state.metrics.logDays = uniqueLogDays(state.thoughts).length;
@@ -192,8 +231,14 @@ function handleThoughtSave(event) {
   els.thoughtForm.reset();
   els.imagePreview.src = "";
   els.imagePreviewWrap.classList.add("hidden");
+  currentVoiceNote = "";
+  els.voicePreview.src = "";
+  els.voicePreviewWrap.classList.add("hidden");
+  els.voiceRecorderStatus.textContent = "You can add a short voice note to this journal entry.";
+  els.stopVoiceBtn.classList.add("hidden");
+  els.recordVoiceBtn.classList.remove("hidden");
   els.categoryOverride.value = "";
-  setOcrStatus("Thought saved.", "good");
+  setOcrStatus("Journal saved.", "good");
   showScreen("dashboardScreen");
   renderAll();
 }
@@ -343,7 +388,7 @@ function renderHome() {
 function renderThoughts() {
   if (!state.thoughts.length) {
     els.recentThoughts.className = "list-block empty-state";
-    els.recentThoughts.textContent = "Start logging your thoughts";
+    els.recentThoughts.textContent = "Start journaling your thoughts";
     return;
   }
 
@@ -355,6 +400,7 @@ function renderThoughts() {
         <span class="badge ${thought.category}">${thought.category}</span>
       </div>
       <p>${escapeHtml(thought.text)}</p>
+      ${thought.voiceNote ? `<audio controls src="${thought.voiceNote}"></audio>` : ""}
       ${thought.repeated ? '<span class="badge repeat">Repetitive</span>' : ""}
     </article>
   `).join("");
@@ -658,17 +704,27 @@ function dominantTone(counts, total) {
 }
 
 function renderMeditationScript() {
-  const steps = [
-    "Sit comfortably and soften your shoulders. Inhale slowly for four counts and exhale for six.",
-    "Notice one thought that feels heavy. Say quietly: I see this thought, and I do not need to fight it right now.",
-    "Bring attention to the heart area. Breathe in steadiness, breathe out pressure.",
-    "Repeat gently: I choose calm. I choose clarity. I choose one kind next thought.",
-    "Before you return, set one small intention for the next hour and carry it lightly."
-  ];
-
-  els.meditationScript.innerHTML = steps.map((step, index) => `
-    <div class="meditation-step"><strong>${index + 1}.</strong> ${step}</div>
+  els.meditationScript.innerHTML = guidedAudioTracks.map((track) => `
+    <div class="meditation-step">
+      <div class="audio-track-head">
+        <div>
+          <strong>${track.title}</strong>
+          <p class="microcopy">${track.duration}</p>
+        </div>
+        <div class="audio-track-actions">
+          <button class="ghost-button" type="button" data-audio-play="${track.id}">Play</button>
+          <button class="ghost-button" type="button" data-audio-stop="${track.id}">Stop</button>
+        </div>
+      </div>
+    </div>
   `).join("");
+
+  els.meditationScript.querySelectorAll("[data-audio-play]").forEach((button) => {
+    button.addEventListener("click", () => playGuidedAudio(button.dataset.audioPlay));
+  });
+  els.meditationScript.querySelectorAll("[data-audio-stop]").forEach((button) => {
+    button.addEventListener("click", stopGuidedAudio);
+  });
 }
 
 function classifyThought(text) {
@@ -789,6 +845,72 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+async function startVoiceRecording() {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    els.voiceRecorderStatus.textContent = "Voice recording is not supported on this device.";
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.addEventListener("dataavailable", (event) => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    });
+    mediaRecorder.addEventListener("stop", () => {
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        currentVoiceNote = reader.result;
+        els.voicePreview.src = currentVoiceNote;
+        els.voicePreviewWrap.classList.remove("hidden");
+        els.voiceRecorderStatus.textContent = "Voice note recorded and ready to save.";
+      };
+      reader.readAsDataURL(blob);
+      stream.getTracks().forEach((track) => track.stop());
+    });
+    mediaRecorder.start();
+    els.voiceRecorderStatus.textContent = "Recording... speak your journal entry.";
+    els.recordVoiceBtn.classList.add("hidden");
+    els.stopVoiceBtn.classList.remove("hidden");
+  } catch (error) {
+    els.voiceRecorderStatus.textContent = "Microphone access was not available.";
+  }
+}
+
+function stopVoiceRecording() {
+  if (!mediaRecorder || mediaRecorder.state === "inactive") {
+    return;
+  }
+  mediaRecorder.stop();
+  els.stopVoiceBtn.classList.add("hidden");
+  els.recordVoiceBtn.classList.remove("hidden");
+}
+
+function playGuidedAudio(trackId) {
+  stopGuidedAudio();
+  const track = guidedAudioTracks.find((item) => item.id === trackId);
+  if (!track || !("speechSynthesis" in window)) {
+    return;
+  }
+
+  currentUtterance = new SpeechSynthesisUtterance(track.lines.join(" "));
+  currentUtterance.rate = 0.92;
+  currentUtterance.pitch = 1;
+  currentUtterance.volume = 1;
+  window.speechSynthesis.speak(currentUtterance);
+}
+
+function stopGuidedAudio() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  currentUtterance = null;
 }
 
 function ensureConnectedMember(name, email) {

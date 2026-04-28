@@ -61,7 +61,7 @@
             <button id="installBtn" class="ghost-button hidden" type="button">Install app</button>
             <button id="goalEditBtn" class="ghost-button" type="button">Edit goals</button>
             <button id="sampleDataBtn" class="ghost-button" type="button">Load sample data</button>
-            <button id="quickLogBtn" class="primary-button" type="button">Log today's thought</button>
+            <button id="quickLogBtn" class="primary-button" type="button">Write today's journal</button>
           </div>
         </div>
 
@@ -92,13 +92,29 @@
 
       <section id="logScreen" class="screen">
         <div class="card">
-          <p class="screen-label">Log Input</p>
-          <h2>Capture the thought</h2>
+          <p class="screen-label">Journal Entry</p>
+          <h2>Capture today's journal</h2>
           <form id="thoughtForm" class="stack">
-            <label><span>Thought text</span><textarea id="thoughtText" rows="5" placeholder="Write what's on your mind..."></textarea></label>
-            <label><span>Upload handwritten note</span><input id="imageInput" type="file" accept="image/*"></label>
+            <label><span>Journal text</span><textarea id="thoughtText" rows="5" placeholder="Write what's on your mind..."></textarea></label>
+            <label><span>Upload handwritten journal note</span><input id="imageInput" type="file" accept="image/*"></label>
             <div id="imagePreviewWrap" class="image-preview hidden"><img id="imagePreview" alt="Uploaded note preview"></div>
             <div id="ocrStatus" class="status-banner neutral">OCR ready when an image is uploaded.</div>
+            <div class="voice-card">
+              <div class="section-head">
+                <div>
+                  <span class="screen-label">Voice journal</span>
+                  <h3>Record your reflection</h3>
+                </div>
+              </div>
+              <div class="voice-actions">
+                <button id="recordVoiceBtn" class="ghost-button" type="button">Start recording</button>
+                <button id="stopVoiceBtn" class="ghost-button hidden" type="button">Stop</button>
+              </div>
+              <p id="voiceRecorderStatus" class="microcopy">You can add a short voice note to this journal entry.</p>
+              <div id="voicePreviewWrap" class="hidden">
+                <audio id="voicePreview" controls></audio>
+              </div>
+            </div>
             <label>
               <span>Category</span>
               <select id="categoryOverride">
@@ -109,13 +125,13 @@
                 <option value="Unnecessary">Unnecessary</option>
               </select>
             </label>
-            <button class="primary-button" type="submit">Save thought</button>
+            <button class="primary-button" type="submit">Save journal</button>
           </form>
         </div>
 
         <div class="card">
-          <h3>Recent entries</h3>
-          <div id="recentThoughts" class="list-block empty-state">Start logging your thoughts</div>
+          <h3>Recent journal entries</h3>
+          <div id="recentThoughts" class="list-block empty-state">Start journaling your thoughts</div>
         </div>
       </section>
 
@@ -160,11 +176,10 @@
               <div class="section-head">
                 <div>
                   <p class="screen-label">2-minute reset</p>
-                  <h3>Practice guided meditation</h3>
+                  <h3>Practice guided audio</h3>
                 </div>
-                <a class="ghost-button meditation-link" href="https://apps.apple.com/us/app/thinkright-meditation-sleep/id1367849764" target="_blank" rel="noreferrer">ThinkRight</a>
               </div>
-              <p class="supporting">A short script inspired by the quick meditations and daily affirmations style described in ThinkRight's public app listings.</p>
+              <p class="supporting">Choose a short guided audio session or affirmation and listen right from the dashboard.</p>
               <div id="meditationScript" class="meditation-script"></div>
             </div>
           </div>
@@ -196,7 +211,7 @@
 
     <nav id="bottomNav" class="bottom-nav hidden">
       <button data-screen="homeScreen" class="nav-item active" type="button">Home</button>
-      <button data-screen="logScreen" class="nav-item" type="button">Log</button>
+      <button data-screen="logScreen" class="nav-item" type="button">Journal</button>
       <button data-screen="dashboardScreen" class="nav-item" type="button">Dashboard</button>
       <button data-screen="communityScreen" class="nav-item" type="button">Community</button>
       <button data-screen="counsellorScreen" class="nav-item" type="button">Support</button>
