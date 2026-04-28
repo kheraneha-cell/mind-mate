@@ -31,6 +31,7 @@ const counsellors = [
 ];
 
 const state = loadState();
+let selectedJourneyDay = "";
 const els = {
   screens: [...document.querySelectorAll(".screen")],
   nav: document.getElementById("bottomNav"),
@@ -60,6 +61,10 @@ const els = {
   dashboardContent: document.getElementById("dashboardContent"),
   pieChart: document.getElementById("pieChart"),
   chartLegend: document.getElementById("chartLegend"),
+  calendarDurationLabel: document.getElementById("calendarDurationLabel"),
+  dashboardDayGrid: document.getElementById("dashboardDayGrid"),
+  dashboardDayDetail: document.getElementById("dashboardDayDetail"),
+  meditationScript: document.getElementById("meditationScript"),
   goalProgressLabel: document.getElementById("goalProgressLabel"),
   goalProgressBar: document.getElementById("goalProgressBar"),
   dashboardInsight: document.getElementById("dashboardInsight"),
@@ -387,6 +392,9 @@ function renderDashboard() {
       <strong>${Math.round((count / total) * 100)}%</strong>
     </div>
   `).join("");
+
+  renderJourneyCalendar();
+  renderMeditationScript();
 }
 
 function renderCommunity() {
@@ -601,6 +609,110 @@ function calculateMetrics() {
   };
 }
 
+function renderJourneyCalendar() {
+  const groupedDays = buildJourneyDays();
+  const duration = state.goal?.duration ?? 15;
+  els.calendarDurationLabel.textContent = `${duration} days`;
+
+  if (!groupedDays.length) {
+    els.dashboardDayGrid.innerHTML = "<p class='empty-state'>No journey data yet.</p>";
+    els.dashboardDayDetail.innerHTML = "<p class='empty-state'>Log a thought to see day details.</p>";
+    return;
+  }
+
+  if (!selectedJourneyDay || !groupedDays.some((day) => day.key === selectedJourneyDay)) {
+    selectedJourneyDay = groupedDays[groupedDays.length - 1].key;
+  }
+
+  els.dashboardDayGrid.innerHTML = groupedDays.map((day, index) => `
+    <button class="calendar-day ${day.tone} ${day.key === selectedJourneyDay ? "active" : ""}" type="button" data-day-key="${day.key}">
+      Day ${index + 1}
+      <small>${day.total} thought${day.total === 1 ? "" : "s"}</small>
+    </button>
+  `).join("");
+
+  els.dashboardDayGrid.querySelectorAll("[data-day-key]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedJourneyDay = button.dataset.dayKey;
+      renderJourneyCalendar();
+    });
+  });
+
+  const selectedDay = groupedDays.find((day) => day.key === selectedJourneyDay) || groupedDays[groupedDays.length - 1];
+  renderJourneyDayDetail(selectedDay);
+}
+
+function renderJourneyDayDetail(day) {
+  const sections = ["Negative", "Waste", "Unnecessary", "Positive"]
+    .map((category) => {
+      const items = day.entries.filter((entry) => entry.category === category);
+      if (!items.length) return "";
+      return `
+        <div class="day-group">
+          <p class="day-group-title">
+            <span class="legend-dot" style="background:${CATEGORY_COLORS[category]}"></span>
+            ${category} (${items.length})
+          </p>
+          ${items.map((entry) => `<div class="day-entry">${escapeHtml(entry.text)}</div>`).join("")}
+        </div>
+      `;
+    })
+    .join("");
+
+  els.dashboardDayDetail.innerHTML = `
+    <h4>${formatLongDate(day.key)}</h4>
+    ${sections || "<p class='empty-state'>No thoughts logged for this day.</p>"}
+  `;
+}
+
+function buildJourneyDays() {
+  const duration = state.goal?.duration ?? 15;
+  const startDate = state.goal?.startDate ? new Date(state.goal.startDate) : new Date();
+  const map = new Map();
+
+  state.thoughts.forEach((thought) => {
+    const key = thought.createdAt.slice(0, 10);
+    if (!map.has(key)) {
+      map.set(key, []);
+    }
+    map.get(key).push(thought);
+  });
+
+  return Array.from({ length: duration }, (_, index) => {
+    const dayDate = new Date(startDate);
+    dayDate.setDate(startDate.getDate() + index);
+    const key = dayDate.toISOString().slice(0, 10);
+    const entries = (map.get(key) || []).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const counts = countByCategory(entries);
+    return {
+      key,
+      entries,
+      counts,
+      total: entries.length,
+      tone: dominantTone(counts, entries.length)
+    };
+  });
+}
+
+function dominantTone(counts, total) {
+  if (!total) return "empty";
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function renderMeditationScript() {
+  const steps = [
+    "Sit comfortably and soften your shoulders. Inhale slowly for four counts and exhale for six.",
+    "Notice one thought that feels heavy. Say quietly: I see this thought, and I do not need to fight it right now.",
+    "Bring attention to the heart area. Breathe in steadiness, breathe out pressure.",
+    "Repeat gently: I choose calm. I choose clarity. I choose one kind next thought.",
+    "Before you return, set one small intention for the next hour and carry it lightly."
+  ];
+
+  els.meditationScript.innerHTML = steps.map((step, index) => `
+    <div class="meditation-step"><strong>${index + 1}.</strong> ${step}</div>
+  `).join("");
+}
+
 function classifyThought(text) {
   const lower = text.toLowerCase();
   const negativeWords = ["fail", "can't", "anxious", "worried", "afraid", "stress", "panic", "sad"];
@@ -805,6 +917,14 @@ function stripTime(date) {
 
 function formatDate(isoString) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(isoString));
+}
+
+function formatLongDate(dateKey) {
+  return new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  }).format(new Date(dateKey));
 }
 
 function fileToDataUrl(file) {

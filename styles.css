@@ -147,6 +147,14 @@ textarea { resize: vertical; }
   gap: 12px;
 }
 
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 .pill {
   padding: 8px 12px;
   border-radius: 999px;
@@ -265,6 +273,120 @@ textarea { resize: vertical; }
 }
 
 .insight-line { margin: 16px 0 0; font-weight: 700; }
+
+.dashboard-section {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-day {
+  border: none;
+  border-radius: 12px;
+  min-height: 52px;
+  padding: 8px 6px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.calendar-day small {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.9;
+  font-size: 0.72rem;
+}
+
+.calendar-day.Positive { background: var(--positive); }
+.calendar-day.Negative { background: #ff8a2a; }
+.calendar-day.Waste { background: #7c8aa1; }
+.calendar-day.Unnecessary { background: #64748b; }
+.calendar-day.empty {
+  background: rgba(25, 49, 38, 0.08);
+  color: var(--muted);
+}
+
+.calendar-day.active {
+  outline: 3px solid rgba(25, 49, 38, 0.85);
+  outline-offset: 1px;
+}
+
+.day-detail-card {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(247, 251, 245, 0.92);
+  border: 1px solid var(--line);
+}
+
+.day-detail-card h4 {
+  margin: 0 0 14px;
+  font-size: 1.35rem;
+  font-family: "Fraunces", serif;
+}
+
+.day-group {
+  margin-top: 16px;
+}
+
+.day-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.day-group-title .legend-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.day-entry {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(22, 45, 33, 0.05);
+}
+
+.day-entry + .day-entry {
+  margin-top: 10px;
+}
+
+.meditation-panel {
+  background: linear-gradient(145deg, rgba(219, 246, 231, 0.8), rgba(255, 255, 255, 0.92));
+}
+
+.meditation-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.meditation-script {
+  display: grid;
+  gap: 10px;
+}
+
+.meditation-step {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(47, 143, 91, 0.14);
+}
 
 .like-button {
   padding: 10px 12px;
@@ -423,5 +545,9 @@ textarea { resize: vertical; }
 
   .action-cluster {
     flex-direction: row;
+  }
+
+  .calendar-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
