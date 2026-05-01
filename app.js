@@ -1,4 +1,4 @@
-const USE_AZURE_BACKEND = false; // Toggle to true once Azure Functions and Cosmos DB are ready
+const USE_AZURE_BACKEND = true; // Toggle to true once Azure Functions and Cosmos DB are ready
 const STORAGE_KEY = "mind-mate-v1";
 const CATEGORY_COLORS = { Positive: "#3fa96b", Negative: "#d66b6b", Waste: "#e0a84f", Unnecessary: "#7b8bbd" };
 
