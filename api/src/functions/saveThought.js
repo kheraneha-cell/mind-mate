@@ -35,7 +35,7 @@ app.http('saveThought', {
                 );
                 
                 // Example: Use Sentiment Analysis to determine positive/negative automatically
-                const sentimentResult = await textClient.analyzeSentiment([text]);
+                const sentimentResult = await textClient.analyze("SentimentAnalysis", [text]);
                 if (sentimentResult.length > 0 && !sentimentResult[0].error) {
                     const sentiment = sentimentResult[0].sentiment; // 'positive', 'neutral', 'negative', 'mixed'
                     if (sentiment === 'negative') {
