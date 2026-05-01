@@ -1,0 +1,16 @@
+{
+  "name": "mind-mate-api",
+  "version": "1.0.0",
+  "description": "Azure Functions backend for Mind Mate",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/cosmos": "^4.0.0",
+    "@azure/ai-language-text": "^1.1.0",
+    "@azure/identity": "^4.0.0"
+  }
+}

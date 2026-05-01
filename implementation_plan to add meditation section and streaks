@@ -1,0 +1,55 @@
+# Goal Description
+
+The goal is to update some existing labels in the app and introduce a brand new "Meditate" section. This new section will feature a recorded meditation and functionality to track the user's meditation progress, either manually or automatically upon completion of the audio session. 
+
+## User Review Required
+
+> [!IMPORTANT]
+> Regarding the "recorded meditation" and "visuals of tracking" you mentioned: you attached a photo of a handwritten notebook about Chakras and frequencies, but the audio file and the screenshot of the tracking visuals seem to be missing from your request. 
+> For now, I will use a **placeholder audio file** and design a **standard tracking visual** (like a calendar or progress bar). Please provide the actual audio file or its link, and any specific design details for the tracking visuals if you have them!
+
+## Open Questions
+
+1. Do you want the new "Meditate" screen to replace the existing "2-minute reset" meditation panel on the Dashboard, or should they both exist?
+2. How would you like the meditation progress to be tracked? (e.g., number of sessions completed, total minutes meditated, a streak counter, or a calendar view of days meditated). Currently, I'll plan for a session counter and a visual calendar representation.
+
+## Proposed Changes
+
+### UI Label Updates
+
+#### [MODIFY] `index.html`
+- Update the "Daily content" label to "start your day- small steps , big wins".
+
+#### [MODIFY] `app.js`
+- Update the fallback install button text from "How to install" to "install on desktop".
+
+---
+
+### New "Meditate" Section
+
+#### [MODIFY] `index.html`
+- **Bottom Navigation**: Add a new button for the "Meditate" screen (`data-screen="meditateScreen"`).
+- **Main Content**: Add a new `<section id="meditateScreen" class="screen">`.
+- Inside the new section, add:
+  - An `<audio>` player for the recorded meditation.
+  - A button to "Mark as completed" (Manual tracking).
+  - A tracking dashboard showing visual progress (e.g., a grid or list of recent meditation sessions).
+
+#### [MODIFY] `app.js`
+- **State Management**: Add a `meditations` array to the `state` object to store logs of completed meditation sessions (date and duration).
+- **Navigation**: Wire up the "Meditate" button in the bottom navigation to show the `meditateScreen`.
+- **Audio Tracking**: Add event listeners to the `<audio>` element so that when the audio finishes (`ended` event), it automatically logs a meditation session.
+- **Manual Tracking**: Add a click handler to the "Mark as completed" button to manually log a session.
+- **Visuals**: Create a function to render the meditation progress visuals (e.g., updating a streak counter and a list/grid of completed days) whenever a session is logged.
+
+#### [MODIFY] `styles.css`
+- Add any necessary styles for the new `meditateScreen`, the audio player container, and the progress tracking visuals to ensure it matches the app's premium Green + White glassmorphic design.
+
+## Verification Plan
+
+### Manual Verification
+- Verify that "How to install" is now "install on desktop" when the app is not installable.
+- Verify "Daily content" reads "start your day- small steps , big wins".
+- Click the new "Meditate" tab in the bottom navigation.
+- Play the placeholder audio to the end and verify that a meditation session is automatically logged and the tracking visual updates.
+- Click the manual tracking button and verify a session is logged.

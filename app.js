@@ -1,3 +1,4 @@
+const USE_AZURE_BACKEND = false; // Toggle to true once Azure Functions and Cosmos DB are ready
 const STORAGE_KEY = "mind-mate-v1";
 const CATEGORY_COLORS = { Positive: "#3fa96b", Negative: "#d66b6b", Waste: "#e0a84f", Unnecessary: "#7b8bbd" };
 
@@ -137,6 +138,7 @@ function init() {
 function attachEvents() {
   els.loginForm.addEventListener("submit", handleLogin);
   els.goalForm.addEventListener("submit", handleGoalSave);
+  els.positiveTargetInput.addEventListener("input", syncGoalTargets);
   els.thoughtForm.addEventListener("submit", handleThoughtSave);
   els.communityForm.addEventListener("submit", handleCommunityPost);
   els.quickLogBtn.addEventListener("click", () => showScreen("logScreen"));
@@ -169,6 +171,7 @@ function handleLogin(event) {
 
 function handleGoalSave(event) {
   event.preventDefault();
+  syncGoalTargets();
   state.goal = {
     positiveTarget: Number(els.positiveTargetInput.value),
     otherTarget: Number(els.otherTargetInput.value),
@@ -205,7 +208,7 @@ async function handleImageUpload(event) {
   }
 }
 
-function handleThoughtSave(event) {
+async function handleThoughtSave(event) {
   event.preventDefault();
   const text = els.thoughtText.value.trim();
   const image = els.imagePreview.src || "";
@@ -217,7 +220,8 @@ function handleThoughtSave(event) {
   const repeated = state.thoughts.some((item) => item.text.trim().toLowerCase() === text.toLowerCase() && text);
   const autoCategory = classifyThought(text);
   const category = els.categoryOverride.value || autoCategory;
-  state.thoughts.unshift({
+  
+  const newThought = {
     id: crypto.randomUUID(),
     text: text || "[Image note]",
       image,
@@ -226,7 +230,15 @@ function handleThoughtSave(event) {
       autoCategory,
       repeated,
     createdAt: new Date().toISOString()
-  });
+  };
+
+  if (USE_AZURE_BACKEND) {
+    setOcrStatus("Saving to Azure...", "neutral");
+    await saveThoughtToAzure(newThought);
+  } else {
+    state.thoughts.unshift(newThought);
+  }
+
   state.metrics.logDays = uniqueLogDays(state.thoughts).length;
   saveState();
 
@@ -388,8 +400,14 @@ function renderAll() {
 
 function renderGoalForm() {
   els.positiveTargetInput.value = state.goal?.positiveTarget ?? 60;
-  els.otherTargetInput.value = state.goal?.otherTarget ?? 40;
+  syncGoalTargets();
   els.durationInput.value = String(state.goal?.duration ?? 15);
+}
+
+function syncGoalTargets() {
+  const positive = Math.max(0, Math.min(100, Number(els.positiveTargetInput.value) || 0));
+  els.positiveTargetInput.value = positive;
+  els.otherTargetInput.value = Math.max(0, 100 - positive);
 }
 
 function renderHome() {
@@ -869,6 +887,44 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// --- Azure Backend Integration Wrappers ---
+async function fetchThoughtsFromAzure() {
+  if (!USE_AZURE_BACKEND) return state.thoughts;
+  
+  try {
+    const response = await fetch('/api/getThoughts');
+    if (!response.ok) throw new Error('Network response was not ok');
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch thoughts from Azure:', error);
+    return state.thoughts; // Fallback to local state if fetch fails
+  }
+}
+
+async function saveThoughtToAzure(thoughtData) {
+  try {
+    const response = await fetch('/api/saveThought', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: thoughtData.text,
+        image: thoughtData.image,
+        voiceNote: thoughtData.voiceNote,
+        overrideCategory: thoughtData.category !== thoughtData.autoCategory ? thoughtData.category : null
+      })
+    });
+    
+    if (!response.ok) throw new Error('Network response was not ok');
+    
+    const savedThought = await response.json();
+    state.thoughts.unshift(savedThought);
+  } catch (error) {
+    console.error('Failed to save thought to Azure:', error);
+    // Fallback if Azure fails
+    state.thoughts.unshift(thoughtData);
+  }
 }
 
 async function startVoiceRecording() {

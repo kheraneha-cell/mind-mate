@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "COSMOS_DB_CONNECTION_STRING": "your_cosmos_db_connection_string",
+    "COSMOS_DB_DATABASE_NAME": "MindMateDB",
+    "COSMOS_DB_CONTAINER_NAME": "Thoughts",
+    "AZURE_AI_LANGUAGE_ENDPOINT": "your_azure_ai_endpoint",
+    "AZURE_AI_LANGUAGE_KEY": "your_azure_ai_key"
+  }
+}
