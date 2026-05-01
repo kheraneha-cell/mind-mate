@@ -916,7 +916,10 @@ async function saveThoughtToAzure(thoughtData) {
       })
     });
     
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Azure Error: ${errText}`);
+    }
     
     const savedThought = await response.json();
     state.thoughts.unshift(savedThought);
