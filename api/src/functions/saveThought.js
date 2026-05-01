@@ -19,8 +19,11 @@ app.http('saveThought', {
             // 1. Initialize Azure Cosmos DB Client
             const connectionString = process.env.COSMOS_DB_CONNECTION_STRING;
             const cosmosClient = new CosmosClient(connectionString);
-            const database = cosmosClient.database(process.env.COSMOS_DB_DATABASE_NAME);
-            const container = database.container(process.env.COSMOS_DB_CONTAINER_NAME);
+            const { database } = await cosmosClient.databases.createIfNotExists({ id: process.env.COSMOS_DB_DATABASE_NAME });
+            const { container } = await database.containers.createIfNotExists({ 
+                id: process.env.COSMOS_DB_CONTAINER_NAME,
+                partitionKey: { paths: ["/id"] }
+            });
 
             // 2. Initialize Azure AI Language Client for sentiment/category classification
             let autoCategory = "Positive";

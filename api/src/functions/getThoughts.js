@@ -14,8 +14,11 @@ app.http('getThoughts', {
             }
 
             const cosmosClient = new CosmosClient(connectionString);
-            const database = cosmosClient.database(process.env.COSMOS_DB_DATABASE_NAME);
-            const container = database.container(process.env.COSMOS_DB_CONTAINER_NAME);
+            const { database } = await cosmosClient.databases.createIfNotExists({ id: process.env.COSMOS_DB_DATABASE_NAME });
+            const { container } = await database.containers.createIfNotExists({ 
+                id: process.env.COSMOS_DB_CONTAINER_NAME,
+                partitionKey: { paths: ["/id"] }
+            });
 
             // Fetch all thoughts (in production, you would filter by UserId)
             const querySpec = {
