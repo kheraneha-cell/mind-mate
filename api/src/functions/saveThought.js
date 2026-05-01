@@ -67,8 +67,12 @@ app.http('saveThought', {
             };
 
         } catch (error) {
-            context.log.error('Error saving thought:', error);
-            return { status: 500, body: "An error occurred while saving the thought." };
+            context.error('Error saving thought:', error);
+            return { 
+                status: 200, 
+                body: JSON.stringify({ isError: true, error: error.message, stack: error.stack }),
+                headers: { 'Content-Type': 'application/json' }
+            };
         }
     }
 });

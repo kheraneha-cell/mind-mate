@@ -922,6 +922,10 @@ async function saveThoughtToAzure(thoughtData) {
     }
     
     const savedThought = await response.json();
+    if (savedThought.isError) {
+      throw new Error(`Azure Backend Error: ${savedThought.error}\nStack: ${savedThought.stack}`);
+    }
+    
     state.thoughts.unshift(savedThought);
   } catch (error) {
     console.error('Failed to save thought to Azure:', error);
