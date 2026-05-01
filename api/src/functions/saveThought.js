@@ -1,6 +1,7 @@
 const { app } = require('@azure/functions');
 const { CosmosClient } = require('@azure/cosmos');
 const { TextAnalysisClient, AzureKeyCredential } = require('@azure/ai-language-text');
+const crypto = require('crypto');
 
 app.http('saveThought', {
     methods: ['POST'],
