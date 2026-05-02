@@ -33,6 +33,7 @@
             <label><span>Email</span><input id="emailInput" type="email" placeholder="name@example.com" required></label>
             <label><span>Name</span><input id="nameInput" type="text" placeholder="Your name"></label>
             <button class="primary-button" type="submit">Continue</button>
+            <button id="guestLoginBtn" class="ghost-button" type="button" style="margin-top: 8px;">Continue as a guest</button>
           </form>
         </div>
       </section>
@@ -56,43 +57,90 @@
       </section>
 
       <section id="homeScreen" class="screen">
-        <div class="card welcome-card">
-          <div>
-            <p class="screen-label">Home</p>
-            <h2 id="welcomeTitle">Welcome back</h2>
-            <p id="journeyMeta" class="supporting"></p>
-          </div>
-          <div class="action-cluster">
-            <button id="installBtn" class="ghost-button hidden" type="button">Download app</button>
-            <button id="goalEditBtn" class="ghost-button" type="button">Edit goals</button>
-            <button id="sampleDataBtn" class="ghost-button" type="button">Load sample data</button>
-            <button id="clearSampleBtn" class="ghost-button" type="button">Clear sample data</button>
-            <button id="quickLogBtn" class="primary-button" type="button">Write today's journal</button>
-          </div>
+        <div class="home-hero card">
+          <p id="homeDateLabel" class="screen-label">Saturday, May 2</p>
+          <h2 id="welcomeTitle">Welcome back, Friend.</h2>
+          <p id="homeNotice" class="supporting">A small notice today is steady progress this week.</p>
         </div>
 
-        <div class="card stat-strip">
-          <div><span class="mini-label">Daily logging rate</span><strong id="dailyRateMetric">0%</strong></div>
-          <div><span class="mini-label">Dashboard usage</span><strong id="dashboardMetric">0%</strong></div>
-          <div><span class="mini-label">Completion</span><strong id="completionMetric">Day 0</strong></div>
+        <div class="home-metric-grid">
+          <article class="card home-metric-card">
+            <div class="metric-icon ring-icon">
+              <svg viewBox="0 0 44 44" aria-hidden="true">
+                <circle cx="22" cy="22" r="17" class="ring-track"></circle>
+                <circle id="positiveRatioRing" cx="22" cy="22" r="17" class="ring-fill"></circle>
+              </svg>
+            </div>
+            <div>
+              <p class="mini-label">Positive ratio</p>
+              <strong id="positiveRatioMetric" class="metric-value">0%</strong>
+              <p id="positiveRatioGoal" class="metric-note">Goal 60%</p>
+            </div>
+          </article>
+
+          <article class="card home-metric-card">
+            <div class="metric-icon streak-icon" aria-hidden="true">S</div>
+            <div>
+              <p class="mini-label">Streak</p>
+              <strong id="streakMetric" class="metric-value">0 days</strong>
+              <p id="streakNote" class="metric-note">One honest entry at a time.</p>
+            </div>
+          </article>
         </div>
 
-        <div class="card content-card">
+        <div class="card prompt-card">
           <div class="content-head">
-            <div><p class="screen-label">Daily content</p><h3>Small action, steady clarity</h3></div>
-            <span id="contentDay" class="pill"></span>
+            <div>
+              <p class="screen-label">Today's gentle prompt</p>
+              <h3 id="gentlePromptTitle">What's one thought that visited you most today, and how did you respond?</h3>
+            </div>
           </div>
-          <p id="dailyContentText"></p>
+          <button id="quickLogBtn" class="primary-button light-button" type="button">Write today's journal</button>
         </div>
 
-        <div class="card notification-card">
-          <div>
-            <p class="screen-label">Notifications</p>
-            <h3>Gentle reminders</h3>
-            <p class="supporting">Morning affirmation and evening log reminder.</p>
+        <div class="card quote-card">
+          <div class="content-head">
+            <div><p class="screen-label">Thought of the day</p></div>
           </div>
-          <label class="switch-row"><span>Enable notifications</span><input id="notificationToggle" type="checkbox"></label>
-          <p id="notificationStatus" class="microcopy"></p>
+          <blockquote id="dailyQuoteText" class="daily-quote">"Awareness is the greatest agent for change."</blockquote>
+          <p id="dailyQuoteAuthor" class="quote-author">Eckhart Tolle</p>
+        </div>
+
+        <div class="home-action-grid">
+          <button id="seeInsightsBtn" class="card quick-action-card" type="button">
+            <div class="quick-action-head">
+              <span class="quick-action-icon insight-icon">
+                <span class="bar bar-one"></span>
+                <span class="bar bar-two"></span>
+                <span class="bar bar-three"></span>
+              </span>
+            </div>
+            <strong>See insights</strong>
+            <span>Trends + triggers</span>
+          </button>
+          <button id="quickMeditationBtn" class="card quick-action-card" type="button">
+            <div class="quick-action-head">
+              <span class="quick-action-icon reset-icon">
+                <span class="reset-wave"></span>
+              </span>
+            </div>
+            <strong>2-min reset</strong>
+            <span>Breathe with me</span>
+          </button>
+        </div>
+
+        <div class="card snapshot-card">
+          <div class="content-head">
+            <div><h3>Today's snapshot</h3></div>
+            <button id="allEntriesBtn" class="link-button" type="button">All entries -></button>
+          </div>
+          <div id="snapshotHighlight" class="snapshot-highlight"></div>
+          <div class="snapshot-stats">
+            <div><span>Positive</span><strong id="homePositiveCount">0</strong></div>
+            <div><span>Negative</span><strong id="homeNegativeCount">0</strong></div>
+            <div><span>Waste</span><strong id="homeWasteCount">0</strong></div>
+            <div><span>Necessary</span><strong id="homeNecessaryCount">0</strong></div>
+          </div>
         </div>
       </section>
 
@@ -117,6 +165,7 @@
                 <button id="stopVoiceBtn" class="ghost-button hidden" type="button">Stop</button>
               </div>
               <p id="voiceRecorderStatus" class="microcopy">You can add a short voice note to this journal entry.</p>
+              <div id="voiceTranscriptPreview" class="transcript-preview hidden"></div>
               <div id="voicePreviewWrap" class="hidden">
                 <audio id="voicePreview" controls></audio>
               </div>
@@ -128,7 +177,7 @@
                 <option value="Positive">Positive</option>
                 <option value="Negative">Negative</option>
                 <option value="Waste">Waste</option>
-                <option value="Unnecessary">Unnecessary</option>
+                <option value="Necessary">Necessary</option>
               </select>
             </label>
             <button class="primary-button" type="submit">Save journal</button>
@@ -151,7 +200,7 @@
               <article class="metric-card"><span>Positive</span><strong id="positiveCount">0</strong></article>
               <article class="metric-card"><span>Negative</span><strong id="negativeCount">0</strong></article>
               <article class="metric-card"><span>Waste</span><strong id="wasteCount">0</strong></article>
-              <article class="metric-card"><span>Unnecessary</span><strong id="unnecessaryCount">0</strong></article>
+              <article class="metric-card"><span>Necessary</span><strong id="necessaryCount">0</strong></article>
             </div>
 
             <div class="chart-panel">
@@ -177,31 +226,41 @@
               <div id="dashboardDayGrid" class="calendar-grid"></div>
               <div id="dashboardDayDetail" class="day-detail-card"></div>
             </div>
-
-            <div class="dashboard-section meditation-panel">
-              <div class="section-head">
-                <div>
-                  <p class="screen-label">2-minute reset</p>
-                  <h3>Practice guided audio</h3>
-                </div>
-              </div>
-              <p class="supporting">Choose a short guided audio session or affirmation and listen right from the dashboard.</p>
-              <div id="meditationScript" class="meditation-script"></div>
-            </div>
           </div>
         </div>
       </section>
 
       <section id="communityScreen" class="screen">
         <div class="card">
-          <p class="screen-label">Community Feed</p>
-          <h2>Motivation wall</h2>
+          <p class="screen-label">Wall</p>
+          <h2>Reframe wall</h2>
+          <p class="supporting">Anonymous reframes, plus a private circle to keep you going.</p>
+          <div class="whatsapp-card">
+            <div>
+              <p class="mini-label">Mind Mate WhatsApp circle</p>
+              <p class="supporting">Walk this together with gentle encouragement, small wins, and a private support loop.</p>
+            </div>
+            <button id="joinWhatsappBtn" class="primary-button" type="button">Join the WhatsApp community</button>
+          </div>
           <form id="communityForm" class="stack">
-            <label><span>Share a short post</span><textarea id="communityText" rows="3" maxlength="200" placeholder="Up to 200 characters"></textarea></label>
+            <label><span>Share a short reframe</span><textarea id="communityText" rows="3" maxlength="200" placeholder="Up to 200 characters"></textarea></label>
             <label><span>Optional image</span><input id="communityImage" type="file" accept="image/*"></label>
-            <button class="primary-button" type="submit">Post</button>
+            <button class="primary-button" type="submit">Share</button>
           </form>
           <div id="communityFeed" class="list-block empty-state">No posts yet. Share a gentle win.</div>
+        </div>
+      </section>
+
+      <section id="resetScreen" class="screen">
+        <div class="card meditation-panel">
+          <div class="section-head">
+            <div>
+              <p class="screen-label">Reset</p>
+              <h2>Take a 2-minute pause</h2>
+            </div>
+          </div>
+          <p class="supporting">Choose a short guided audio session or affirmation and listen when you need a calm reset.</p>
+          <div id="meditationScript" class="meditation-script"></div>
         </div>
       </section>
 
@@ -213,15 +272,40 @@
         </div>
       </section>
 
+      <section id="settingsScreen" class="screen">
+        <div class="card">
+          <p class="screen-label">Settings</p>
+          <h2>Manage your journey</h2>
+          <p class="supporting">Use these tools to adjust your goals, install the app, manage reminders, or reset demo content.</p>
+          <div class="stack">
+            <button id="installBtn" class="ghost-button hidden" type="button">Download app</button>
+            <button id="goalEditBtn" class="ghost-button" type="button">Edit goals</button>
+            <button id="sampleDataBtn" class="ghost-button" type="button">Load sample data</button>
+            <button id="clearSampleBtn" class="ghost-button" type="button">Clear sample data</button>
+          </div>
+        </div>
+
+        <div class="card notification-card">
+          <div>
+            <p class="screen-label">Notifications</p>
+            <h3>Gentle reminders</h3>
+            <p class="supporting">Morning affirmation and evening journal reminder.</p>
+          </div>
+          <label class="switch-row"><span>Enable notifications</span><input id="notificationToggle" type="checkbox"></label>
+          <p id="notificationStatus" class="microcopy"></p>
+        </div>
+      </section>
+
     </main>
 
     <nav id="bottomNav" class="bottom-nav hidden">
       <button data-screen="homeScreen" class="nav-item active" type="button">Home</button>
-      <button data-screen="goalScreen" class="nav-item" type="button">Goals</button>
       <button data-screen="logScreen" class="nav-item" type="button">Journal</button>
+      <button data-screen="resetScreen" class="nav-item" type="button">Reset</button>
       <button data-screen="dashboardScreen" class="nav-item" type="button">Dashboard</button>
-      <button data-screen="communityScreen" class="nav-item" type="button">Community</button>
+      <button data-screen="communityScreen" class="nav-item" type="button">Wall</button>
       <button data-screen="counsellorScreen" class="nav-item" type="button">Support</button>
+      <button data-screen="settingsScreen" class="nav-item" type="button">Settings</button>
     </nav>
   </div>
 

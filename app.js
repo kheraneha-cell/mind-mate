@@ -1,6 +1,6 @@
 const USE_AZURE_BACKEND = true; // Toggle to true once Azure Functions and Cosmos DB are ready
 const STORAGE_KEY = "mind-mate-v1";
-const CATEGORY_COLORS = { Positive: "#3fa96b", Negative: "#d66b6b", Waste: "#e0a84f", Unnecessary: "#7b8bbd" };
+const CATEGORY_COLORS = { Positive: "#3fa96b", Negative: "#ff8a2a", Waste: "#7c8aa1", Necessary: "#64748b" };
 
 const contentCards = [
   "Walk barefoot for 10 minutes to release mental tension.",
@@ -23,6 +23,21 @@ const contentCards = [
   "Natural light and open air can lower stress buildup.",
   "A gentle bedtime routine often supports clearer mornings.",
   "Say no once today to protect your attention."
+];
+
+const gentlePrompts = [
+  "What's one thought that visited you most today, and how did you respond?",
+  "Which moment tested your peace today, and what did you learn from it?",
+  "What thought deserves less power from you tomorrow?",
+  "Where did you choose calm instead of reacting quickly today?",
+  "What helped you return to yourself when the day felt noisy?"
+];
+
+const thoughtQuotes = [
+  { text: "Awareness is the greatest agent for change.", author: "Eckhart Tolle" },
+  { text: "You are not your thoughts. You are the awareness behind them.", author: "Unknown" },
+  { text: "Small steady steps create the deepest inner change.", author: "Mind Mate" },
+  { text: "Notice the thought, then choose the next one with care.", author: "Mind Mate" }
 ];
 
 const counsellors = [
@@ -64,6 +79,9 @@ let mediaRecorder = null;
 let audioChunks = [];
 let currentVoiceNote = "";
 let currentUtterance = null;
+let speechRecognition = null;
+let liveTranscript = "";
+let interimTranscript = "";
 const els = {
   screens: [...document.querySelectorAll(".screen")],
   nav: document.getElementById("bottomNav"),
@@ -74,6 +92,9 @@ const els = {
   thoughtForm: document.getElementById("thoughtForm"),
   communityForm: document.getElementById("communityForm"),
   quickLogBtn: document.getElementById("quickLogBtn"),
+  quickMeditationBtn: document.getElementById("quickMeditationBtn"),
+  seeInsightsBtn: document.getElementById("seeInsightsBtn"),
+  allEntriesBtn: document.getElementById("allEntriesBtn"),
   goalEditBtn: document.getElementById("goalEditBtn"),
   sampleDataBtn: document.getElementById("sampleDataBtn"),
   clearSampleBtn: document.getElementById("clearSampleBtn"),
@@ -86,6 +107,7 @@ const els = {
   recordVoiceBtn: document.getElementById("recordVoiceBtn"),
   stopVoiceBtn: document.getElementById("stopVoiceBtn"),
   voiceRecorderStatus: document.getElementById("voiceRecorderStatus"),
+  voiceTranscriptPreview: document.getElementById("voiceTranscriptPreview"),
   voicePreviewWrap: document.getElementById("voicePreviewWrap"),
   voicePreview: document.getElementById("voicePreview"),
   ocrStatus: document.getElementById("ocrStatus"),
@@ -94,7 +116,7 @@ const els = {
   positiveCount: document.getElementById("positiveCount"),
   negativeCount: document.getElementById("negativeCount"),
   wasteCount: document.getElementById("wasteCount"),
-  unnecessaryCount: document.getElementById("unnecessaryCount"),
+  necessaryCount: document.getElementById("necessaryCount"),
   dashboardEmpty: document.getElementById("dashboardEmpty"),
   dashboardContent: document.getElementById("dashboardContent"),
   pieChart: document.getElementById("pieChart"),
@@ -113,16 +135,33 @@ const els = {
   contentDay: document.getElementById("contentDay"),
   welcomeTitle: document.getElementById("welcomeTitle"),
   journeyMeta: document.getElementById("journeyMeta"),
+  homeDateLabel: document.getElementById("homeDateLabel"),
+  homeNotice: document.getElementById("homeNotice"),
+  positiveRatioMetric: document.getElementById("positiveRatioMetric"),
+  positiveRatioGoal: document.getElementById("positiveRatioGoal"),
+  positiveRatioRing: document.getElementById("positiveRatioRing"),
+  streakMetric: document.getElementById("streakMetric"),
+  streakNote: document.getElementById("streakNote"),
+  gentlePromptTitle: document.getElementById("gentlePromptTitle"),
+  dailyQuoteText: document.getElementById("dailyQuoteText"),
+  dailyQuoteAuthor: document.getElementById("dailyQuoteAuthor"),
+  snapshotHighlight: document.getElementById("snapshotHighlight"),
+  homePositiveCount: document.getElementById("homePositiveCount"),
+  homeNegativeCount: document.getElementById("homeNegativeCount"),
+  homeWasteCount: document.getElementById("homeWasteCount"),
+  homeNecessaryCount: document.getElementById("homeNecessaryCount"),
   communityText: document.getElementById("communityText"),
   communityImage: document.getElementById("communityImage"),
   communityFeed: document.getElementById("communityFeed"),
+  joinWhatsappBtn: document.getElementById("joinWhatsappBtn"),
   counsellorList: document.getElementById("counsellorList"),
   positiveTargetInput: document.getElementById("positiveTargetInput"),
   otherTargetInput: document.getElementById("otherTargetInput"),
   durationInput: document.getElementById("durationInput"),
   contactDialog: document.getElementById("contactDialog"),
   contactText: document.getElementById("contactText"),
-  closeDialogBtn: document.getElementById("closeDialogBtn")
+  closeDialogBtn: document.getElementById("closeDialogBtn"),
+  guestLoginBtn: document.getElementById("guestLoginBtn")
 };
 let deferredInstallPrompt = null;
 
@@ -137,11 +176,15 @@ function init() {
 
 function attachEvents() {
   els.loginForm.addEventListener("submit", handleLogin);
+  els.guestLoginBtn?.addEventListener("click", handleGuestLogin);
   els.goalForm.addEventListener("submit", handleGoalSave);
   els.positiveTargetInput.addEventListener("input", syncGoalTargets);
   els.thoughtForm.addEventListener("submit", handleThoughtSave);
   els.communityForm.addEventListener("submit", handleCommunityPost);
   els.quickLogBtn.addEventListener("click", () => showScreen("logScreen"));
+  els.quickMeditationBtn?.addEventListener("click", () => showScreen("resetScreen"));
+  els.seeInsightsBtn?.addEventListener("click", () => showScreen("dashboardScreen"));
+  els.allEntriesBtn?.addEventListener("click", () => showScreen("logScreen"));
   els.goalEditBtn.addEventListener("click", () => showScreen("goalScreen"));
   els.sampleDataBtn.addEventListener("click", loadSampleJourney);
   els.clearSampleBtn.addEventListener("click", clearSampleData);
@@ -151,6 +194,7 @@ function attachEvents() {
   els.imageInput.addEventListener("change", handleImageUpload);
   els.notificationToggle.addEventListener("change", handleNotificationToggle);
   els.logoutBtn.addEventListener("click", handleLogout);
+  els.joinWhatsappBtn?.addEventListener("click", handleJoinWhatsapp);
   els.navItems.forEach((item) => item.addEventListener("click", () => showScreen(item.dataset.screen)));
   els.closeDialogBtn.addEventListener("click", () => els.contactDialog.close());
   window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -163,9 +207,19 @@ function handleLogin(event) {
   const email = document.getElementById("emailInput").value.trim();
   const name = document.getElementById("nameInput").value.trim() || "Friend";
   state.profile = { email, name };
+  hydrateGoalForProfile(email, name);
   ensureConnectedMember(name, email);
   saveState();
-  showScreen(state.goal ? "homeScreen" : "goalScreen");
+  showScreen(requiresGoalSetup() ? "goalScreen" : "homeScreen");
+  renderAll();
+}
+
+function handleGuestLogin() {
+  state.profile = { email: "guest@mindmate.app", name: "Guest" };
+  hydrateGoalForProfile("guest@mindmate.app", "Guest");
+  ensureConnectedMember("Guest", "guest@mindmate.app");
+  saveState();
+  showScreen(requiresGoalSetup() ? "goalScreen" : "homeScreen");
   renderAll();
 }
 
@@ -176,8 +230,13 @@ function handleGoalSave(event) {
     positiveTarget: Number(els.positiveTargetInput.value),
     otherTarget: Number(els.otherTargetInput.value),
     duration: Number(els.durationInput.value),
-    startDate: state.goal?.startDate || todayKey()
+    startDate: state.goal?.startDate || todayKey(),
+    ownerEmail: state.profile?.email || "",
+    ownerName: state.profile?.name || ""
   };
+  state.goalsByEmail = state.goalsByEmail || {};
+  state.goalsByEmail[state.profile?.email || "guest@mindmate.app"] = { ...state.goal };
+  state.onboardingNeedsGoal = false;
   saveState();
   showScreen("homeScreen");
   renderAll();
@@ -246,9 +305,12 @@ async function handleThoughtSave(event) {
   els.imagePreview.src = "";
   els.imagePreviewWrap.classList.add("hidden");
   currentVoiceNote = "";
+  liveTranscript = "";
   els.voicePreview.src = "";
   els.voicePreviewWrap.classList.add("hidden");
   els.voiceRecorderStatus.textContent = "You can add a short voice note to this journal entry.";
+  els.voiceTranscriptPreview.textContent = "";
+  els.voiceTranscriptPreview.classList.add("hidden");
   els.stopVoiceBtn.classList.add("hidden");
   els.recordVoiceBtn.classList.remove("hidden");
   els.categoryOverride.value = "";
@@ -374,7 +436,7 @@ function loadSampleJourney() {
 
 function routeInitialScreen() {
   if (!state.profile) return showScreen("loginScreen");
-  if (!state.goal) return showScreen("goalScreen");
+  if (requiresGoalSetup()) return showScreen("goalScreen");
   showScreen("homeScreen");
 }
 
@@ -396,6 +458,7 @@ function renderAll() {
   renderThoughts();
   renderDashboard();
   renderCommunity();
+  renderMeditationScript();
 }
 
 function renderGoalForm() {
@@ -415,14 +478,44 @@ function renderHome() {
   const day = currentJourneyDay();
   const duration = state.goal?.duration ?? 15;
   const usage = calculateMetrics();
+  const counts = countByCategory(state.thoughts);
+  const total = state.thoughts.length;
+  const positiveRatio = total ? Math.round((counts.Positive / total) * 100) : 0;
+  const goalTarget = state.goal?.positiveTarget ?? 60;
+  const todayThoughts = state.thoughts.filter((thought) => thought.createdAt.slice(0, 10) === todayKey());
+  const todayCounts = countByCategory(todayThoughts);
+  const latestThought = todayThoughts[0] || state.thoughts[0];
+  const quote = thoughtQuotes[(Math.max(day, 1) - 1) % thoughtQuotes.length];
 
-  els.welcomeTitle.textContent = `Welcome, ${name}`;
-  els.journeyMeta.textContent = state.goal ? `Day ${Math.min(day, duration)} of ${duration}. Keep it simple and honest.` : "Set a goal to start your journey.";
-  els.contentDay.textContent = `Day ${Math.min(day, contentCards.length)}`;
-  els.dailyContentText.textContent = contentCards[(Math.max(day, 1) - 1) % contentCards.length];
-  els.dailyRateMetric.textContent = `${usage.dailyLoggingRate}%`;
-  els.dashboardMetric.textContent = `${usage.dashboardUsage}%`;
-  els.completionMetric.textContent = `Day ${Math.min(day, duration)}`;
+  els.homeDateLabel.textContent = formatHomeDate(new Date());
+  els.welcomeTitle.textContent = `Welcome back, ${name}.`;
+  els.homeNotice.textContent = state.goal
+    ? `A small notice today is steady progress on day ${Math.min(day, duration)} of your ${duration}-day journey.`
+    : "Set a goal to begin your daily mindfulness and journaling habit.";
+  if (els.journeyMeta) {
+    els.journeyMeta.textContent = state.goal ? `Day ${Math.min(day, duration)} of ${duration}. Keep it simple and honest.` : "Set a goal to start your journey.";
+  }
+  if (els.contentDay) els.contentDay.textContent = `Day ${Math.min(day, contentCards.length)}`;
+  if (els.dailyContentText) els.dailyContentText.textContent = contentCards[(Math.max(day, 1) - 1) % contentCards.length];
+  els.gentlePromptTitle.textContent = gentlePrompts[(Math.max(day, 1) - 1) % gentlePrompts.length];
+  els.dailyQuoteText.textContent = `"${quote.text}"`;
+  els.dailyQuoteAuthor.textContent = quote.author;
+  if (els.dailyRateMetric) els.dailyRateMetric.textContent = `${usage.dailyLoggingRate}%`;
+  if (els.dashboardMetric) els.dashboardMetric.textContent = `${usage.dashboardUsage}%`;
+  if (els.completionMetric) els.completionMetric.textContent = `Day ${Math.min(day, duration)}`;
+  els.positiveRatioMetric.textContent = `${positiveRatio}%`;
+  els.positiveRatioGoal.textContent = `Goal ${goalTarget}%`;
+  updateRatioRing(positiveRatio);
+  const streakDays = calculateCurrentStreak();
+  els.streakMetric.textContent = `${streakDays} day${streakDays === 1 ? "" : "s"}`;
+  els.streakNote.textContent = streakDays ? "Steady. Keep going." : "Start with one honest journal.";
+  els.snapshotHighlight.innerHTML = latestThought
+    ? `<span class="badge ${latestThought.category}">${latestThought.category}</span><p>${escapeHtml(latestThought.text)}</p>`
+    : "<p class='supporting'>Write your first journal entry to see today's pattern here.</p>";
+  els.homePositiveCount.textContent = todayCounts.Positive;
+  els.homeNegativeCount.textContent = todayCounts.Negative;
+  els.homeWasteCount.textContent = todayCounts.Waste;
+  els.homeNecessaryCount.textContent = todayCounts.Necessary;
   els.notificationToggle.checked = Boolean(state.notifications.enabled);
   els.notificationStatus.textContent = state.notifications.enabled ? "Morning and evening reminders are ready when supported." : "Notifications are off.";
 }
@@ -466,7 +559,7 @@ function renderDashboard() {
   els.positiveCount.textContent = counts.Positive;
   els.negativeCount.textContent = counts.Negative;
   els.wasteCount.textContent = counts.Waste;
-  els.unnecessaryCount.textContent = counts.Unnecessary;
+  els.necessaryCount.textContent = counts.Necessary;
   els.goalProgressLabel.textContent = `${positivePercent}% vs ${goalTarget}% target`;
   els.goalProgressBar.style.width = `${Math.min(positivePercent, 100)}%`;
   els.dashboardInsight.textContent = generateInsight(counts, total);
@@ -480,13 +573,12 @@ function renderDashboard() {
   `).join("");
 
   renderJourneyCalendar();
-  renderMeditationScript();
 }
 
 function renderCommunity() {
   if (!state.community.length) {
     els.communityFeed.className = "list-block empty-state";
-    els.communityFeed.textContent = "No posts yet. Share a gentle win.";
+    els.communityFeed.textContent = "No wall posts yet. Share a gentle win.";
     return;
   }
 
@@ -689,7 +781,7 @@ function renderJourneyCalendar() {
 }
 
 function renderJourneyDayDetail(day) {
-  const sections = ["Negative", "Waste", "Unnecessary", "Positive"]
+  const sections = ["Negative", "Waste", "Necessary", "Positive"]
     .map((category) => {
       const items = day.entries.filter((entry) => entry.category === category);
       if (!items.length) return "";
@@ -773,11 +865,11 @@ function classifyThought(text) {
   const lower = text.toLowerCase();
   const negativeWords = ["fail", "can't", "anxious", "worried", "afraid", "stress", "panic", "sad"];
   const wasteWords = ["scroll", "gossip", "waste time", "doomscroll", "binge"];
-  const unnecessaryWords = ["weather", "traffic", "others opinion", "what people think", "others' opinion"];
+  const necessaryWords = ["weather", "traffic", "others opinion", "what people think", "others' opinion"];
 
   if (negativeWords.some((word) => lower.includes(word))) return "Negative";
   if (wasteWords.some((word) => lower.includes(word))) return "Waste";
-  if (unnecessaryWords.some((word) => lower.includes(word))) return "Unnecessary";
+  if (necessaryWords.some((word) => lower.includes(word))) return "Necessary";
   return "Positive";
 }
 
@@ -788,7 +880,7 @@ function generateInsight(counts, total) {
   if (top.category === "Positive") return "Positive thoughts are leading today.";
   if (top.category === "Negative") return "High negative thoughts today.";
   if (top.category === "Waste") return "Waste thoughts are taking more space today.";
-  return "Unnecessary thoughts are showing up often today.";
+  return "Necessary thoughts are showing up often today.";
 }
 
 function drawPieChart(counts) {
@@ -857,6 +949,8 @@ function loadState() {
   const defaults = {
     profile: null,
     goal: null,
+    goalsByEmail: {},
+    onboardingNeedsGoal: false,
     thoughts: [],
     community: [],
     members: [],
@@ -871,9 +965,10 @@ function loadState() {
   return {
     ...defaults,
     ...parsed,
-    thoughts: Array.isArray(parsed.thoughts) ? parsed.thoughts : [],
+    thoughts: Array.isArray(parsed.thoughts) ? parsed.thoughts.map(normalizeThoughtCategory) : [],
     community: Array.isArray(parsed.community) ? parsed.community : [],
     members: Array.isArray(parsed.members) ? parsed.members : [],
+    goalsByEmail: parsed.goalsByEmail && typeof parsed.goalsByEmail === "object" ? parsed.goalsByEmail : {},
     notifications: {
       ...defaults.notifications,
       ...(parsed.notifications || {})
@@ -881,7 +976,8 @@ function loadState() {
     metrics: {
       ...defaults.metrics,
       ...(parsed.metrics || {})
-    }
+    },
+    onboardingNeedsGoal: Boolean(parsed.onboardingNeedsGoal)
   };
 }
 
@@ -943,6 +1039,8 @@ async function startVoiceRecording() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     audioChunks = [];
+    liveTranscript = "";
+    interimTranscript = "";
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.addEventListener("dataavailable", (event) => {
       if (event.data.size > 0) {
@@ -956,13 +1054,24 @@ async function startVoiceRecording() {
         currentVoiceNote = reader.result;
         els.voicePreview.src = currentVoiceNote;
         els.voicePreviewWrap.classList.remove("hidden");
-        els.voiceRecorderStatus.textContent = "Voice note recorded and ready to save.";
+        const finalTranscript = `${liveTranscript} ${interimTranscript}`.trim();
+        if (finalTranscript) {
+          els.thoughtText.value = finalTranscript;
+          els.voiceTranscriptPreview.textContent = finalTranscript;
+          els.voiceTranscriptPreview.classList.remove("hidden");
+        }
+        els.voiceRecorderStatus.textContent = liveTranscript
+          ? "Voice note and transcript captured. You can edit the journal before saving."
+          : "Voice note recorded and ready to save.";
       };
       reader.readAsDataURL(blob);
       stream.getTracks().forEach((track) => track.stop());
     });
     mediaRecorder.start();
-    els.voiceRecorderStatus.textContent = "Recording... speak your journal entry.";
+    startSpeechToText();
+    els.voiceRecorderStatus.textContent = "Listening now. Speak naturally and your words will appear below.";
+    els.voiceTranscriptPreview.textContent = "Listening...";
+    els.voiceTranscriptPreview.classList.remove("hidden");
     els.recordVoiceBtn.classList.add("hidden");
     els.stopVoiceBtn.classList.remove("hidden");
   } catch (error) {
@@ -974,9 +1083,69 @@ function stopVoiceRecording() {
   if (!mediaRecorder || mediaRecorder.state === "inactive") {
     return;
   }
+  stopSpeechToText();
   mediaRecorder.stop();
   els.stopVoiceBtn.classList.add("hidden");
   els.recordVoiceBtn.classList.remove("hidden");
+}
+
+function startSpeechToText() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    els.voiceTranscriptPreview.textContent = "Live voice-to-text is not supported in this browser yet.";
+    return;
+  }
+
+  speechRecognition = new SpeechRecognition();
+  speechRecognition.lang = "en-US";
+  speechRecognition.interimResults = true;
+  speechRecognition.continuous = true;
+
+  speechRecognition.onresult = (event) => {
+    let interimText = "";
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      const snippet = event.results[i][0]?.transcript || "";
+      if (event.results[i].isFinal) {
+        liveTranscript += `${snippet} `;
+      } else {
+        interimText += snippet;
+      }
+    }
+
+    interimTranscript = interimText.trim();
+    const combined = `${liveTranscript}${interimTranscript}`.trim();
+    els.voiceTranscriptPreview.textContent = combined || "Listening...";
+  };
+
+  speechRecognition.onerror = () => {
+    const fallbackTranscript = `${liveTranscript} ${interimTranscript}`.trim();
+    els.voiceTranscriptPreview.textContent = fallbackTranscript || "Voice-to-text could not continue. Your audio note is still being recorded.";
+  };
+
+  speechRecognition.onend = () => {
+    const finalTranscript = `${liveTranscript} ${interimTranscript}`.trim();
+    if (finalTranscript) {
+      els.thoughtText.value = finalTranscript;
+      els.voiceTranscriptPreview.textContent = finalTranscript;
+      els.voiceTranscriptPreview.classList.remove("hidden");
+    }
+  };
+
+  speechRecognition.start();
+}
+
+function stopSpeechToText() {
+  if (!speechRecognition) return;
+  try {
+    speechRecognition.stop();
+  } catch (error) {}
+  const finalTranscript = `${liveTranscript} ${interimTranscript}`.trim() || els.voiceTranscriptPreview.textContent.trim();
+  if (finalTranscript && finalTranscript !== "Listening..." && !finalTranscript.startsWith("Live voice-to-text")) {
+    els.thoughtText.value = finalTranscript;
+    els.voiceTranscriptPreview.textContent = finalTranscript;
+    els.voiceTranscriptPreview.classList.remove("hidden");
+  }
+  speechRecognition = null;
 }
 
 function playGuidedAudio(trackId) {
@@ -998,6 +1167,11 @@ function stopGuidedAudio() {
     window.speechSynthesis.cancel();
   }
   currentUtterance = null;
+}
+
+function handleJoinWhatsapp() {
+  els.contactText.textContent = "Add your WhatsApp invite link here when ready. This Wall section is prepared for your private support circle.";
+  els.contactDialog.showModal();
 }
 
 function ensureConnectedMember(name, email) {
@@ -1041,7 +1215,7 @@ function updateInstallButton() {
   const installBtn = document.getElementById("installBtn");
   const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
   installBtn.classList.toggle("hidden", standalone || !state.profile || !state.goal);
-  installBtn.textContent = deferredInstallPrompt ? "Download app" : "How to install";
+  installBtn.textContent = deferredInstallPrompt ? "Download app" : "Install on desktop";
 }
 
 function unregisterServiceWorkers() {
@@ -1055,9 +1229,11 @@ function unregisterServiceWorkers() {
 
 function countByCategory(thoughts) {
   return thoughts.reduce((acc, thought) => {
-    acc[thought.category] += 1;
+    const category = normalizeCategoryName(thought.category);
+    if (!(category in acc)) return acc;
+    acc[category] += 1;
     return acc;
-  }, { Positive: 0, Negative: 0, Waste: 0, Unnecessary: 0 });
+  }, { Positive: 0, Negative: 0, Waste: 0, Necessary: 0 });
 }
 
 function percentage(thoughts, category) {
@@ -1092,6 +1268,10 @@ function formatDate(isoString) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(isoString));
 }
 
+function formatHomeDate(date) {
+  return new Intl.DateTimeFormat("en", { weekday: "long", month: "short", day: "numeric" }).format(date);
+}
+
 function formatLongDate(dateKey) {
   return new Intl.DateTimeFormat("en", {
     weekday: "long",
@@ -1121,4 +1301,73 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function normalizeCategoryName(category) {
+  return category === "Unnecessary" ? "Necessary" : category;
+}
+
+function normalizeThoughtCategory(thought) {
+  return {
+    ...thought,
+    category: normalizeCategoryName(thought.category),
+    autoCategory: normalizeCategoryName(thought.autoCategory)
+  };
+}
+
+function updateRatioRing(positiveRatio) {
+  if (!els.positiveRatioRing) return;
+  const radius = 17;
+  const circumference = 2 * Math.PI * radius;
+  els.positiveRatioRing.style.strokeDasharray = `${circumference}`;
+  els.positiveRatioRing.style.strokeDashoffset = `${circumference * (1 - positiveRatio / 100)}`;
+}
+
+function calculateCurrentStreak() {
+  const keys = uniqueLogDays(state.thoughts).sort();
+  if (!keys.length) return 0;
+
+  let streak = 0;
+  let cursor = stripTime(new Date());
+  const loggedDays = new Set(keys.map((key) => stripTime(new Date(key))));
+
+  while (loggedDays.has(cursor)) {
+    streak += 1;
+    cursor -= 86400000;
+  }
+
+  if (!streak) {
+    let latestCursor = Math.max(...loggedDays);
+    while (loggedDays.has(latestCursor)) {
+      streak += 1;
+      latestCursor -= 86400000;
+    }
+  }
+
+  return streak;
+}
+
+function requiresGoalSetup() {
+  if (!state.profile) return true;
+  if (state.onboardingNeedsGoal) return true;
+  if (!state.goal) return true;
+  if (!state.goal.ownerEmail) return true;
+  return state.goal.ownerEmail !== state.profile.email;
+}
+
+function hydrateGoalForProfile(email, name) {
+  state.goalsByEmail = state.goalsByEmail || {};
+  const existingGoal = state.goalsByEmail[email];
+  if (existingGoal) {
+    state.goal = {
+      ...existingGoal,
+      ownerEmail: email,
+      ownerName: name
+    };
+    state.onboardingNeedsGoal = false;
+    return;
+  }
+
+  state.goal = null;
+  state.onboardingNeedsGoal = true;
 }
